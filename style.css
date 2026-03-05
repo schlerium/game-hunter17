@@ -1,158 +1,165 @@
+/* RESET */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
     user-select: none;
 }
 
-html, body {
-    width: 100%;
-    height: 100%;
-    background: #000;
+body {
+    background: black;
+    font-family: monospace;
     overflow: hidden;
-    font-family: 'Courier New', monospace;
 }
 
-/* TEXT */
-.pixel-text {
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.yellow-stroke {
-    color: #ffff00;
-    text-shadow:
-        -2px -2px 0 #000,
-         2px -2px 0 #000,
-        -2px  2px 0 #000,
-         2px  2px 0 #000;
-}
-
-/* ROTATE PROMPT */
-#rotate-prompt {
-    display: none;
+/* ROTATE SCREEN */
+#rotateScreen {
     position: fixed;
     inset: 0;
-    background: #111;
-    z-index: 9999;
-    flex-direction: column;
+    background: black;
+    display: none;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
+    z-index: 1000;
+    color: yellow;
+    font-size: 22px;
     text-align: center;
 }
 
-#rotate-prompt img {
+#rotateScreen img {
     width: 120px;
     margin-bottom: 20px;
 }
 
-@media (orientation: portrait) {
-    #rotate-prompt { display: flex; }
-    #game-container { display: none; }
-}
-
-/* GAME AREA */
-#game-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-}
-
-canvas {
-    display: block;
+/* TOP BAR */
+#topBar {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 100%;
-    touch-action: none;
-    image-rendering: pixelated;
-}
-
-/* HUD */
-#hud {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.85);
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-    z-index: 100;
-}
-
-.score-container {
-    position: relative;
-    width: 200px;
-}
-
-.score-bg {
-    width: 100%;
-}
-
-#score-display {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-#health-bar {
-    width: 65px;
-}
-
-.hud-controls {
-    margin-top: 5px;
-}
-
-.hud-controls button {
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    color: yellow;
     font-size: 20px;
-    margin-right: 8px;
-    padding: 5px 10px;
+    z-index: 999;
+}
+
+.leftUI span {
+    margin-right: 25px;
+}
+
+.rightUI button {
+    background: none;
+    border: 2px solid yellow;
+    color: yellow;
+    font-size: 18px;
+    padding: 6px 14px;
+    margin-left: 10px;
     cursor: pointer;
 }
 
-/* OVERLAYS */
-.ui-overlay {
-    position: absolute;
+.rightUI button:hover {
+    background: yellow;
+    color: black;
+}
+
+/* WELCOME SCREEN */
+#welcomeScreen {
+    position: fixed;
     inset: 0;
     background: url("signal-2026-03-04-162705.png") no-repeat center center;
     background-size: cover;
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 500;
 }
 
-#pause-screen,
-#game-over-screen {
-    background: rgba(0,0,0,0.85);
-}
-
-/* BUTTON STACK */
-.button-stack {
+.menuButtons {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 20px;
 }
 
-/* PIXEL BUTTON */
-.pixel-btn {
-    position: relative;
-    width: 300px;
-    margin: 15px 0;
+.menuButtons button {
+    padding: 15px 50px;
+    font-size: 22px;
+    background: black;
+    color: yellow;
+    border: 3px solid yellow;
     cursor: pointer;
 }
 
-.btn-img {
-    width: 100%;
-    display: block;
+.menuButtons button:hover {
+    background: yellow;
+    color: black;
 }
 
-.btn-text {
+/* PAUSE MENU */
+#pauseMenu {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 700;
+}
+
+.pauseContent {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.pauseContent button {
+    padding: 15px 40px;
+    font-size: 20px;
+    border: 2px solid yellow;
+    background: black;
+    color: yellow;
+}
+
+/* CREDITS */
+#creditsScreen {
+    position: fixed;
+    inset: 0;
+    background: black;
+    color: yellow;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-size: 24px;
+    z-index: 800;
+}
+
+#creditsScreen button {
+    margin-top: 20px;
+    padding: 10px 30px;
+    border: 2px solid yellow;
+    background: black;
+    color: yellow;
+}
+
+/* GAME CONTAINER */
+#gameContainer {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
+    top: 60px; /* below top bar */
+    left: 0;
+    width: 100%;
+    height: calc(100vh - 60px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.hidden {
-    display: none !important;
+#gameCanvas {
+    max-width: 100%;
+    max-height: 100%;
 }
