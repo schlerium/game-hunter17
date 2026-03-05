@@ -1,4 +1,3 @@
-/* RESET */
 * {
     margin: 0;
     padding: 0;
@@ -10,20 +9,19 @@ body {
     background: black;
     font-family: monospace;
     overflow: hidden;
+    color: yellow;
 }
 
-/* ROTATE SCREEN */
+/* Rotate Screen */
 #rotateScreen {
     position: fixed;
     inset: 0;
     background: black;
     display: none;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
-    z-index: 1000;
-    color: yellow;
-    font-size: 22px;
+    z-index: 9999;
     text-align: center;
 }
 
@@ -32,127 +30,71 @@ body {
     margin-bottom: 20px;
 }
 
-/* TOP BAR */
+/* Top Bar */
 #topBar {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 60px;
-    background: rgba(0, 0, 0, 0.85);
-    display: flex;
+    background: rgba(0,0,0,0.9);
+    display: none;
     justify-content: space-between;
     align-items: center;
     padding: 0 20px;
-    color: yellow;
     font-size: 20px;
-    z-index: 999;
-}
-
-.leftUI span {
-    margin-right: 25px;
+    z-index: 1000;
 }
 
 .rightUI button {
     background: none;
     border: 2px solid yellow;
     color: yellow;
-    font-size: 18px;
-    padding: 6px 14px;
+    padding: 6px 12px;
     margin-left: 10px;
     cursor: pointer;
 }
 
-.rightUI button:hover {
-    background: yellow;
-    color: black;
-}
-
-/* WELCOME SCREEN */
-#welcomeScreen {
-    position: fixed;
-    inset: 0;
-    background: url("signal-2026-03-04-162705.png") no-repeat center center;
-    background-size: cover;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 500;
-}
-
-.menuButtons {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.menuButtons button {
-    padding: 15px 50px;
-    font-size: 22px;
-    background: black;
-    color: yellow;
-    border: 3px solid yellow;
-    cursor: pointer;
-}
-
-.menuButtons button:hover {
-    background: yellow;
-    color: black;
-}
-
-/* PAUSE MENU */
+/* Screens */
+#welcomeScreen,
+#creditsScreen,
 #pauseMenu {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.8);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 700;
-}
-
-.pauseContent {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.pauseContent button {
-    padding: 15px 40px;
-    font-size: 20px;
-    border: 2px solid yellow;
-    background: black;
-    color: yellow;
-}
-
-/* CREDITS */
-#creditsScreen {
-    position: fixed;
-    inset: 0;
-    background: black;
-    color: yellow;
-    display: none;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    font-size: 24px;
-    z-index: 800;
+    z-index: 500;
 }
 
-#creditsScreen button {
-    margin-top: 20px;
-    padding: 10px 30px;
-    border: 2px solid yellow;
+#welcomeScreen {
+    background: url("signal-2026-03-04-162705.png") center/cover no-repeat;
+}
+
+#creditsScreen,
+#pauseMenu {
+    background: rgba(0,0,0,0.9);
+    display: none;
+}
+
+.menu button {
+    margin: 15px;
+    padding: 15px 40px;
+    font-size: 22px;
     background: black;
+    border: 3px solid yellow;
     color: yellow;
+    cursor: pointer;
 }
 
-/* GAME CONTAINER */
-#gameContainer {
+/* Game Wrapper */
+#gameWrapper {
     position: absolute;
-    top: 60px; /* below top bar */
-    left: 0;
-    width: 100%;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
     height: calc(100vh - 60px);
     display: flex;
     justify-content: center;
@@ -160,6 +102,7 @@ body {
 }
 
 #gameCanvas {
+    background: black;
     max-width: 100%;
     max-height: 100%;
 }
