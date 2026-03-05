@@ -1,76 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Mosquito Hunter</title>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <!-- Mobile Viewport -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mosquito Hunter</title>
 
-    <!-- PWA -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
-
-    <!-- Favicon (prevents favicon.ico 404 error) -->
-    <link rel="icon" href="icon-192.png" type="image/png">
-
-    <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
-<!-- ROTATE SCREEN -->
+<!-- Rotate Screen -->
 <div id="rotateScreen">
-    <img src="signal-2026-03-05-182622.png" alt="Rotate Device">
+    <img src="signal-2026-03-05-182622.png" alt="Rotate">
     <p>ROTATE DEVICE</p>
 </div>
 
-<!-- TOP UI BAR -->
+<!-- Top Bar -->
 <div id="topBar">
     <div class="leftUI">
         <span id="scoreDisplay">🦟 0</span>
         <span id="heartDisplay">❤️ 10</span>
     </div>
-
     <div class="rightUI">
         <button id="pauseBtn">❚❚</button>
         <button id="exitBtn">✕</button>
     </div>
 </div>
 
-<!-- WELCOME SCREEN -->
+<!-- Welcome Screen -->
 <div id="welcomeScreen">
-    <div class="menuButtons">
+    <div class="menu">
         <button id="playBtn">PLAY</button>
         <button id="creditsBtn">CREDITS</button>
     </div>
 </div>
 
-<!-- PAUSE MENU -->
+<!-- Credits -->
+<div id="creditsScreen">
+    <h2>Developer - Satyajit</h2>
+    <button id="backBtn">BACK</button>
+</div>
+
+<!-- Pause -->
 <div id="pauseMenu">
-    <div class="pauseContent">
+    <div class="menu">
         <button id="resumeBtn">RESUME</button>
         <button id="pauseExitBtn">EXIT</button>
     </div>
 </div>
 
-<!-- CREDITS -->
-<div id="creditsScreen">
-    <p>Developer - Satyajit</p>
-    <button id="backBtn">BACK</button>
-</div>
-
-<!-- GAME AREA -->
-<div id="gameContainer">
+<!-- Game Wrapper -->
+<div id="gameWrapper">
     <canvas id="gameCanvas"></canvas>
 </div>
 
-<script src="game.js"></script>
-
-<script>
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-}
-</script>
+<script src="game.js?v=2"></script>
 
 </body>
 </html>
