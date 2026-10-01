@@ -1,0 +1,594 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pixel Casino</title>
+<style>
+:root{--bg:#14091f;--ink:#f4ecd8;--gold:#ffd23f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+body{margin:0 auto;background:var(--bg);color:var(--ink);font:700 14px "Courier New",monospace;max-width:900px;padding:6px}
+.wrap{position:relative}
+canvas{width:100%;display:block;image-rendering:pixelated;border:4px solid var(--gold);border-radius:6px;background:#000}
+.scr{position:absolute;inset:0;background:rgba(10,4,20,.93);display:none;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding:10px;text-align:center}
+.scr.on{display:flex}
+h1{margin:0 0 4px;color:var(--gold);font-size:clamp(18px,5.5vw,32px);text-shadow:3px 3px #a3221c}
+button{font:inherit;padding:10px 14px;color:#1a0d2a;background:var(--gold);border:3px solid #000;box-shadow:0 4px #8a6d12;cursor:pointer;min-width:150px}
+button:active{transform:translateY(3px);box-shadow:0 1px #8a6d12}
+button:disabled{opacity:.35}
+.row{display:flex;gap:8px;justify-content:center}
+#acts{display:none;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+#acts button{min-width:0;padding:12px 2px;font-size:13px}
+#bF{background:#e0554b}
+#dacts{display:none;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}
+#dacts button{min-width:0;padding:16px 2px;font-size:15px}
+#bBank{background:#7dfc9c}
+#chat{display:none;margin-top:10px}
+#cl{height:110px;overflow-y:auto;background:#1a0d2a;border:3px solid var(--gold);padding:6px;font-weight:400;font-size:13px;text-align:left;word-break:break-word}
+#cl b{color:var(--gold)}
+#chat .row{margin-top:6px}
+#ci{flex:1;width:auto;min-width:0;padding:8px;font-size:16px;text-align:left}
+#cs{min-width:80px;padding:8px}
+#lcfg{display:none;font-weight:400}
+#lcfg input,#dcfg input{width:110px;padding:6px;margin:4px 0}
+#ms{margin:8px 0;min-height:40px;text-align:center;white-space:pre-line}
+#lv{display:none;margin:auto;min-width:0;font-size:12px;padding:6px 12px;background:#888}
+small{opacity:.7;font-weight:400}
+input{font:inherit;padding:10px;text-align:center;border:3px solid var(--gold);background:#1a0d2a;color:var(--ink);width:230px}
+#tm{text-align:center;color:var(--gold);min-height:18px;margin-top:6px}
+</style></head><body>
+<div class="wrap"><canvas id="cv" width="960" height="540"></canvas>
+<div class="scr on" id="main"><h1>♠ PIXEL CASINO ♥</h1><input id="nm" maxlength="12" placeholder="Type your name" autocomplete="nickname"><button onclick="pick('poker')">♠ HOLD'EM POKER</button><button onclick="pick('dice')">🎲 PIG DICE<br><small>push your luck · dodge the 7</small></button></div>
+<div class="scr" id="mode"><h1 id="gt">…</h1><button onclick="scr('single')">SINGLE PLAYER</button><button onclick="scr('multi')">MULTIPLAYER</button><button onclick="scr('main')">BACK</button></div>
+<div class="scr" id="single"><h1>HOW MANY PLAYERS?</h1><div class="row"><button style="min-width:58px" onclick="solo(2)">2</button><button style="min-width:58px" onclick="solo(3)">3</button><button style="min-width:58px" onclick="solo(4)">4</button><button style="min-width:58px" onclick="solo(5)">5</button></div><div class="row"><button style="min-width:58px" onclick="solo(6)">6</button><button style="min-width:58px" onclick="solo(7)">7</button><button style="min-width:58px" onclick="solo(8)">8</button><button style="min-width:58px" onclick="solo(9)">9</button></div><small>You + bots</small><button onclick="scr('mode')">BACK</button></div>
+<div class="scr" id="dcfg"><h1>GAME SETUP</h1><div>Target score<br><input id="stg" type="number" inputmode="numeric" min="20" max="1000"></div><div>Timer in minutes (0 = off)<br><input id="stm" type="number" inputmode="numeric" min="0" max="180"></div><button onclick="dsolo()">START</button><button onclick="scr('single')">BACK</button></div>
+<div class="scr" id="multi"><h1>ONLINE</h1>
+<button onclick="join('q',1)">QUICK PLAY<br><small>2-9 humans, no bots</small></button>
+<button onclick="join('b3',1)">BOT ROOM · 3 SEATS<br><small>2+ humans, bots fill</small></button>
+<button onclick="join('b4',1)">BOT ROOM · 4 SEATS<br><small>2+ humans, bots fill</small></button>
+<button onclick="join('b6',1)">BOT ROOM · 6 SEATS<br><small>2+ humans, bots fill</small></button>
+<button onclick="join('b9',1)">BOT ROOM · 9 SEATS<br><small>2+ humans, bots fill</small></button>
+<button onclick="scr('mode')">BACK</button></div>
+<div class="scr" id="lobby"><h1>LOBBY</h1><div id="lm">…</div><div id="lcfg">Target <input id="ltg" type="number" inputmode="numeric" oninput="cfgRead('#ltg','#ltm');if(!L.length)lobbyTick()"> Timer min <input id="ltm" type="number" inputmode="numeric" oninput="cfgRead('#ltg','#ltm');if(!L.length)lobbyTick()"></div><button onclick="location.reload()">LEAVE</button></div>
+</div>
+<div id="tm"></div><div id="ms"></div>
+<div id="acts"><button id="bF">FOLD</button><button id="bC">CHECK</button><button id="bR1">RAISE</button><button id="bR2">RAISE</button></div>
+<div id="dacts"><button id="bRoll">ROLL</button><button id="bBank">BANK 0</button></div>
+<button id="lv" onclick="location.reload()">LEAVE TABLE</button>
+<div id="chat"><div id="cl"></div><div class="row"><input id="ci" maxlength="140" placeholder="Say something…" autocomplete="off"><button id="cs">SEND</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const $=q=>document.querySelector(q),SU='♠♥♦♣',HN=['High card','One pair','Two pair','Three of a kind','Straight','Flush','Full house','Four of a kind','Straight flush'];
+const rn=r=>({11:'J',12:'Q',13:'K',14:'A'})[r]||r;
+const cmp=(a,b)=>{for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]||0)-(b[i]||0);if(d)return d}return 0};
+function score(c){const m={};c.forEach(x=>m[x.r]=(m[x.r]||0)+1);
+const g=Object.entries(m).map(([r,k])=>[+r,k]).sort((a,b)=>b[1]-a[1]||b[0]-a[0]),rs=g.map(x=>x[0]);
+const fl=c.length==5&&c.every(x=>x.s==c[0].s);let st=false,hi=rs[0];
+if(c.length==5&&g.length==5){if(rs[0]-rs[4]==4)st=true;else if(rs.join()=='14,5,4,3,2'){st=true;hi=5}}
+const a=g[0][1],b=g[1]?g[1][1]:0;let cat=0;
+if(st&&fl)cat=8;else if(a==4)cat=7;else if(a==3&&b==2)cat=6;else if(fl)cat=5;else if(st)cat=4;else if(a==3)cat=3;else if(a==2&&b==2)cat=2;else if(a==2)cat=1;
+return{v:[cat,...(st?[hi]:rs)],c}}
+function best(a){if(a.length<=5)return score(a);let b=null;const t=s=>{if(!b||cmp(s.v,b.v)>0)b=s};
+a.forEach((_,i)=>{if(a.length==6)t(score(a.filter((_,k)=>k!=i)));else a.forEach((_,j)=>{if(j>i)t(score(a.filter((_,k)=>k!=i&&k!=j)))})});return b}
+const descr=b=>HN[b.v[0]]+(b.v[0]==1?' of '+rn(b.v[1])+'s':b.v[0]==0?', '+rn(b.v[1])+' high':'');
+function str(p){if(!board.length){const[x,y]=p.h.map(c=>c.r).sort((m,n)=>n-m);
+if(x==y)return .55+x/14*.4;return(x+y)/28*.5+(p.h[0].s==p.h[1].s?.06:0)+(x-y<3?.05:0)}
+const b=best([...p.h,...board]),c=b.v[0];let s=[.12,.45,.62,.75,.82,.88,.94,.98,1][c];
+if(c==0)s+=(b.v[1]-2)/12*.1;if(c>0&&c<4&&!p.h.some(x=>b.c.includes(x)))s*=.55;return Math.min(s,1)}
+
+/* ---------- host-side game engine ---------- */
+let Q=[],n=0,D=0,deck,board=[],pot=0,stage=0,cur=0,cbet=0,raises=0,over=true,busy=false,H=0,HL=[],msg='',tm,isHost=true,tdl=0,dlt='',dlN=0,MY='',SH=-1,SY=0;
+const NAMES=['Tom','Lia','Ben','Ivy','Max','Zoe','Sam','Kai'];
+function view(i){return JSON.stringify({me:i,n,D,board,pot,stage,cur,cbet,raises,over,busy,H,msg,hl:HL,dt:dlt,dn:dlN,sh:SH,sy:SY,tl:(!over&&!busy&&Q[cur]&&!Q[cur].bot)?Math.max(0,Math.ceil((tdl-Date.now())/1000)):0,
+seats:Q.map((p,j)=>({n:p.n,chips:p.chips,bet:p.bet,f:p.f,say:p.say,win:p.win,bc:p.shown&&p.b?p.b.c:null,h:(j==i||p.shown)?p.h:p.h.map(()=>0)}))})}
+const V=i=>G=='dice'?dview(i):view(i);
+function sync(){Q.forEach((p,i)=>{if(p.c){if(p.c.open)p.c.send({t:'s',v:V(i)})}else if(p.local)setS(V(i))})}
+function go(){Q.forEach(p=>p.chips=1000);D=n-1;scr('');newHand()}
+function post(i,a,t){const p=Q[i];p.chips-=a;p.bet+=a;pot+=a;p.say=t+' '+a}
+function newHand(){Q.forEach(p=>{if(p.chips<100)p.chips=1000});H++;D=(D+1)%n;deck=[];
+for(let r=2;r<15;r++)for(const s of SU)deck.push({r,s});deck.sort(()=>Math.random()-.5);
+board=[];pot=0;stage=0;cbet=0;raises=0;over=false;HL=[];msg='';SH=-1;SY=Math.random()*4|0;
+Q.forEach(p=>{p.h=[deck.pop(),deck.pop()];p.bet=0;p.f=false;p.a=false;p.say='';p.win=false;p.shown=false});
+const sb=n==2?D:(D+1)%n,bb=(sb+1)%n;post(sb,10,'SB');post(bb,20,'BB');cbet=20;cur=(bb+1)%n;
+busy=true;tdl=0;say('New hand! Blinds: '+Q[sb].n+' $10, '+Q[bb].n+' $20.');sync();setTimeout(next,1800+n*600+700)}
+const FEM=['Lia','Ivy'],tit=p=>(FEM.includes(p.n)?'Madame ':'Monsieur ')+p.n;
+function say(t){dlt=t;dlN++}
+function next(){clearTimeout(tm);const p=Q[cur];say(tit(p)+', your turn.');
+if(p.bot){busy=true;tdl=0;p.say='...';sync();tm=setTimeout(()=>bot(cur),2000+Math.random()*3000)}
+else{busy=false;tdl=Date.now()+30000;sync();tm=setTimeout(()=>act(cur,cbet-Q[cur].bet?'fold':'check'),30000)}}
+function act2(i,a,x){if(over||busy||i!=cur)return;const tc=cbet-Q[i].bet;
+if(a=='raise'&&raises>=2)return;if(a=='call'||a=='check')a=tc?'call':'check';act(i,a,x==100?100:40)}
+function act(i,t,amt){clearTimeout(tm);const p=Q[i];let m=0;busy=true;tdl=0;
+if(t=='fold'){p.f=true;p.say='FOLD'}
+else if(t=='check')p.say='CHECK';
+else{const to=t=='raise'?cbet+amt:cbet;m=Math.max(0,Math.min(to-p.bet,p.chips));p.chips-=m;p.bet+=m;pot+=m;
+if(t=='raise'){cbet=p.bet;raises++;Q.forEach(q=>{if(q!=p)q.a=false});p.say='RAISE '+p.bet}else p.say=m?'CALL '+m:'CHECK'}
+p.a=true;const k=t=='call'&&!m?'check':t;
+say(p.n+(k=='fold'?' folds.':k=='check'?' checks.':k=='raise'?' raises to $'+p.bet+'!':' calls $'+m+'.'));
+sync();setTimeout(advance,1900)}
+function advance(){const live=Q.filter(p=>!p.f);if(live.length==1)return finish();
+if(live.every(p=>p.a&&(p.bet==cbet||p.chips==0)))return nextStage();
+do cur=(cur+1)%n;while(Q[cur].f);next()}
+function nextStage(){Q.forEach(p=>{p.bet=0;p.a=false;if(!p.f)p.say=''});cbet=0;raises=0;stage++;
+if(stage==1)board.push(deck.pop(),deck.pop(),deck.pop());else if(stage<4)board.push(deck.pop());
+const f=c=>rn(c.r)+c.s;busy=true;
+if(stage==4){say('Showdown! Cards on the table, mes amis.');sync();return setTimeout(finish,2600)}
+say(['','Dealing the flop: ','The turn: ','The river: '][stage]+(stage==1?board.map(f).join(' '):f(board[board.length-1])));
+cur=D;do cur=(cur+1)%n;while(Q[cur].f);sync();setTimeout(next,2800)}
+function bot(i){if(over)return;const p=Q[i],tc=cbet-p.bet,pre=!stage,ad=i%3==0?.1:i%3==1?-.1:0;
+let s=str(p)+(Math.random()-.5)*.12;if(i%3==2&&Math.random()<.2)s=.85;
+if(s>(pre?.55:.7)+ad&&raises<2)act(i,'raise',s>.85?100:40);
+else if(!tc)act(i,'check');
+else if(s>(pre?.28:.35)+ad||tc<=20&&Math.random()<.6)act(i,'call');
+else act(i,'fold')}
+function end(){sync();setTimeout(()=>{pot=0;sync()},1200);tm=setTimeout(newHand,9000)}
+function finish(){over=true;busy=true;tdl=0;const live=Q.map((_,i)=>i).filter(i=>!Q[i].f);
+if(live.length==1){const w=live[0];Q[w].win=true;Q[w].chips+=pot;say(tit(Q[w])+' takes the pot of $'+pot+'. Everyone else folded!');msg=Q[w].n+' won $'+pot+' (everyone folded)';return end()}
+live.forEach(i=>Q[i].b=best([...Q[i].h,...board]));
+const rk=[...live].sort((a,b)=>cmp(Q[b].b.v,Q[a].b.v)),w=rk.filter(i=>!cmp(Q[i].b.v,Q[rk[0]].b.v)),ord=[];
+for(let k=1;ord.length<live.length;k++){const i=(D+k)%n;if(!Q[i].f)ord.push(i)}
+say('Showdown! Show your cards, one by one.');sync();
+let t=1800;
+ord.forEach(i=>{setTimeout(()=>{Q[i].shown=true;SH=i;say(Q[i].n+' shows '+descr(Q[i].b)+'.');sync()},t);t+=3600});
+const last=ord[ord.length-1],rs=(w.length==1&&w[0]==last)?[]:w;
+rs.forEach(i=>{setTimeout(()=>{SH=i;HL=Q[i].b.c.map(c=>c.r+c.s);say('Once more, the best hand: '+Q[i].n+' with '+descr(Q[i].b)+'!');sync()},t);t+=3400});
+setTimeout(()=>{HL=[...new Set(w.flatMap(i=>Q[i].b.c.map(c=>c.r+c.s)))];const share=Math.floor(pot/w.length);w.forEach(i=>{Q[i].win=true;Q[i].chips+=share});
+const nm2=w.map(i=>Q[i].n).join(' & ');
+msg=nm2+' won $'+pot+'\n'+rk.map(i=>Q[i].n+': '+descr(Q[i].b)).join('\n');
+say('Bravo '+nm2+'! '+(w.length>1?'Split pot of':'Wins')+' $'+pot+' with '+descr(Q[w[0]].b)+'.');end()},t)}
+
+/* ---------- PIG DICE : host engine ---------- */
+let dpot=0,dd=[0,0],drk=0,drn=0,TG=100,gEnd=0,gt;const CF={tg:100,min:15},DUR=1700;
+function cfgRead(a,b){const t=parseInt($(a).value),m=parseInt($(b).value);CF.tg=isNaN(t)?100:Math.max(20,Math.min(1000,t));CF.min=isNaN(m)?15:Math.max(0,Math.min(180,m))}
+function dview(i){return JSON.stringify({me:i,n,cur,pot:dpot,d:dd,rk:drk,tg:TG,over,busy,dt:dlt,dn:dlN,msg,
+tr:gEnd?Math.max(0,Math.ceil((gEnd-Date.now())/1000)):-1,
+tl:(!over&&!busy&&Q[cur]&&!Q[cur].bot)?Math.max(0,Math.ceil((tdl-Date.now())/1000)):0,seats:Q.map(p=>({n:p.n,tot:p.tot,win:p.win}))})}
+function dtimer(){clearTimeout(gt);gEnd=CF.min?Date.now()+CF.min*60000:0;if(gEnd)gt=setTimeout(dtimeUp,CF.min*60000)}
+function dgo(){Q.forEach(p=>{p.tot=0;p.win=false});dd=[0,0];drk=0;drn=0;dpot=0;cur=0;over=false;busy=true;msg='';scr('');dtimer();
+say('Pig Dice! First to '+TG+(CF.min?', or most banked in '+CF.min+' min':'')+'.');sync();tm=setTimeout(dnext,2400)}
+function dnext(){clearTimeout(tm);const p=Q[cur];say(tit(p)+', your turn.');
+if(p.bot){busy=true;tdl=0;sync();tm=setTimeout(dbot,1300+Math.random()*1500)}
+else{busy=false;tdl=Date.now()+30000;sync();tm=setTimeout(()=>ddo(cur,dpot?'bank':'roll'),30000)}}
+function dact(i,a){if(over||busy||i!=cur)return;if(a=='bank'&&!dpot)return;if(a=='bank'||a=='roll')ddo(i,a)}
+function dpass(){cur=(cur+1)%n;dpot=0;drn=0;dnext()}
+const d2=()=>[1+Math.random()*6|0,1+Math.random()*6|0];
+/* 1st roll of a turn: never 7. 2nd roll: 7 is rare (~6%). 3rd+: normal (1 in 6). */
+function droll(){let r=d2();if(r[0]+r[1]==7&&(drn==0||(drn==1&&Math.random()>=.35)))while(r[0]+r[1]==7)r=d2();return r}
+function ddo(i,a){clearTimeout(tm);const p=Q[i];busy=true;tdl=0;
+if(a=='bank'){p.tot+=dpot;say(p.n+' banks '+dpot+'. Total: '+p.tot+'.');dpot=0;sync();
+if(p.tot>=TG)return tm=setTimeout(()=>dwin([i]),1500);return tm=setTimeout(dpass,1800)}
+dd=droll();drn++;drk++;say(p.n+' rolls…');sync();
+tm=setTimeout(()=>{const s=dd[0]+dd[1];
+if(s==7){say(p.n+' rolled a 7!'+(dpot?' Turn pot of '+dpot+' is lost.':''));dpot=0;sync();tm=setTimeout(dpass,2400)}
+else{dpot+=s;say(p.n+' rolled '+s+'. Turn pot: '+dpot+'.');sync();tm=setTimeout(dnext,1500)}},DUR+250)}
+function dtimeUp(){if(over)return;clearTimeout(tm);dpot=0;busy=true;tdl=0;const mx=Math.max(...Q.map(p=>p.tot));
+const ws=mx>0?Q.map((p,i)=>p.tot==mx?i:-1).filter(i=>i>=0):[];
+say("Time's up! Unbanked points don't count.");sync();tm=setTimeout(()=>dwin(ws,1),2400)}
+function dwin(ws,tu){clearTimeout(gt);clearTimeout(tm);over=true;busy=true;tdl=0;gEnd=0;ws.forEach(i=>Q[i].win=true);
+const nm2=ws.map(i=>Q[i].n).join(' & ');
+msg=(ws.length?nm2+(ws.length>1?' tie with ':' wins with ')+Q[ws[0]].tot+(tu?' as time ran out!':'!'):"Time's up and nobody banked anything. Draw!")+'\n'+Q.map(p=>p.n+': '+p.tot).join('\n');
+say(ws.length?'Bravo '+nm2+'!':"Time's up. It's a draw!");sync();
+tm=setTimeout(()=>{Q.forEach(p=>{p.tot=0;p.win=false});cur=(cur+1)%n;dd=[0,0];drk=0;drn=0;dpot=0;over=false;msg='';dtimer();say('New game!');sync();tm=setTimeout(dnext,1800)},9000)}
+function dbot(){if(over)return;const i=cur,p=Q[i],need=TG-p.tot,mx=Math.max(...Q.filter((_,k)=>k!=i).map(q=>q.tot));
+let T=[24,30,36][i%3]+(Math.random()-.5)*10;
+if(p.tot>mx+TG*.25)T-=8;
+if(mx>=TG-25&&mx>p.tot)T=Math.max(T,Math.min(need,60));
+ddo(i,dpot>0&&(dpot>=need||dpot>=T)?'bank':'roll')}
+function dsolo(){cfgRead('#stg','#stm');TG=CF.tg;start()}
+function dcfgShow(){$('#stg').value=CF.tg;$('#stm').value=CF.min;scr('dcfg')}
+
+/* ---------- PIG DICE : client view + renderer ---------- */
+let DS=null,dRk=-1,dStart=0,lastDDn=-1;
+function dSet(v){DS=JSON.parse(v);DS.end=Date.now()+DS.tl*1000;DS.tend=Date.now()+DS.tr*1000;
+if(DS.rk!==dRk){dRk=DS.rk;dStart=performance.now()}
+if(DS.dn!==lastDDn){lastDDn=DS.dn;bub=DS.dt}
+$('#tm').textContent='';scr('');$('#acts').style.display='none';$('#dacts').style.display='grid';$('#lv').style.display='block';
+const me=DS.seats[DS.me],my=!DS.over&&DS.cur==DS.me&&!DS.busy;
+$('#bRoll').disabled=!my;$('#bBank').disabled=!my||!DS.pot;$('#bBank').textContent='BANK '+DS.pot;
+$('#ms').textContent=DS.over?DS.msg:'Turn pot: '+DS.pot+(my?'   ▶ YOUR TURN':'')+'\nYou: '+me.tot+' / '+DS.tg}
+const PIPS=[[],[[1,1]],[[0,0],[2,2]],[[0,0],[1,1],[2,2]],[[0,0],[2,0],[0,2],[2,2]],[[0,0],[2,0],[1,1],[0,2],[2,2]],[[0,0],[2,0],[0,1],[2,1],[0,2],[2,2]]];
+function die(v,x,y){x=Math.round(x);y=Math.round(y);R('#000',x-1,y-1,28,28);R('#fff',x,y,26,26);R('#bbb',x,y+24,26,2);PIPS[v].forEach(([a,b])=>R('#111',x+4+a*7,y+4+b*7,4,4))}
+function funnel(el,u){g.globalAlpha=.45*Math.min(1,(.9-u)/.15);
+for(let r=0;r<12;r++){const f=r/12,w=74*(1-f)+10,sw=Math.sin(el/75+r*.7)*6*(1-f);R(r%2?'#dfe6ff':'#8f9bd6',240-w/2+sw,98+r*5.2,w,5)}
+g.globalAlpha=1}
+function dframe(t){if(!DS)return;const N=DS.n,now=performance.now(),el=now-dStart,an=DS.rk>0&&el<DUR,u=el/DUR;if(an)dealing=true;
+T('PIG DICE',8,18,'#ffd23f','left',8);T('FIRST TO '+DS.tg,472,18,'#ffd23f','right',8);
+if(DS.tr>=0&&!DS.over){const sc=Math.max(0,Math.ceil((DS.tend-Date.now())/1000));T('TIME '+(sc/60|0)+':'+String(sc%60).padStart(2,'0'),8,29,sc<=60?'#ff6b5a':'#fff','left',8)}
+T('TURN POT '+DS.pot,240,124,'#ffd23f','center',9);
+const ps=[0,1].map(k=>{const rx=222+k*36,ry=147;let v=DS.d[k],cx=rx,cy=ry,back=false;
+if(an){const th0=.75*DUR/55+k*Math.PI;
+if(u<.75){const w=u/.75,hf=Math.sin(Math.PI*w),th=el/55+k*Math.PI,hw=6+hf*32;cx=240+Math.cos(th)*hw;cy=150-hf*44+Math.sin(th)*hw*.3;back=Math.sin(th)<0;v=1+((el/70|0)*(k?5:3)+k*2)%6}
+else{const q=(u-.75)/.25,e=1-(1-q)**3,sx=240+Math.cos(th0)*6,sy=150+Math.sin(th0)*1.8;cx=sx+(rx-sx)*e;cy=sy+(ry-sy)*e-34*Math.sin(Math.PI*q);if(q<.55)v=1+((el/70|0)*(k?5:3)+k*2)%6}}
+return{cx,cy,v,back}});
+ps.filter(o=>o.back).forEach(o=>die(o.v,o.cx-13,o.cy-13));
+if(an&&u<.9)funnel(el,u);
+ps.filter(o=>!o.back).forEach(o=>die(o.v,o.cx-13,o.cy-13));
+if(DS.rk>0&&!an){const s=DS.d[0]+DS.d[1];if(s==7)T('SEVEN! BUST!',240,180,(t/200|0)%2?'#ff4d3d':'#ffe27a','center',10);else T('ROLLED '+s,240,180,'#fff','center',8)}
+const lay=layout(N,DS.me);DS.seats.forEach((p,j)=>{const[x,y]=sp(lay[j],N);
+R('#111',x-24,y-12,48,5);R('#7dfc9c',x-23,y-11,Math.min(46,46*p.tot/DS.tg),3);
+T(p.n,x,y+9,j==DS.me?'#ffd23f':'#fff','center',8);T(p.tot+' / '+DS.tg,x,y+18,'#ffd23f','center',8);
+if(!DS.over&&DS.cur==j&&DS.tl>0){const sc=Math.max(0,Math.ceil((DS.end-Date.now())/1000)),lo=sc<=10;R('#000',x-24,y+27,48,4);R(lo?'#ff4d3d':'#7dfc9c',x-23,y+28,46*sc/30,2);T(sc+'s',x,y+38,lo?'#ff6b5a':'#fff','center',8);
+if(j==DS.me){const tt='⏱ '+sc+'s left';if($('#tm').textContent!=tt)$('#tm').textContent=tt}}
+const ring=!DS.over&&DS.cur==j&&(t/300|0)%2?'#ffd23f':p.win&&(t/200|0)%2?'#7dfc9c':0;
+if(ring){R(ring,x-26,y-17,52,2);R(ring,x-26,y+24,52,2);R(ring,x-26,y-17,2,43);R(ring,x+24,y-17,2,43)}})}
+
+/* ---------- lobby & networking (PeerJS: free public broker, nothing stored) ---------- */
+let peer,conn,mode,maxH,L=[],started=false,cdT,G='poker',MP=0;
+const pf=()=>G=='dice'?'pxc-pig':'holdem',start=()=>G=='dice'?dgo():go();
+function pick(g){if(!getName())return;G=g;$('#gt').textContent=g=='dice'?'PIG DICE':"HOLD'EM POKER";scr('mode')}
+function scr(id){document.querySelectorAll('.scr').forEach(e=>e.classList.toggle('on',e.id==id))}
+function getName(){const v=$('#nm').value.trim().slice(0,12);if(!v){$('#nm').focus();$('#nm').placeholder='Type your name first!';return 0}MY=v;try{localStorage.setItem('pxhName',v)}catch(e){}return 1}
+try{$('#nm').value=localStorage.getItem('pxhName')||''}catch(e){}
+function lob(t){$('#lm').textContent=t;L.forEach(c=>c.open&&c.send({t:'l',m:t}))}
+function solo(k){n=k;Q=[{n:MY,local:1}];while(Q.length<n)Q.push({n:NAMES[Q.length-1],bot:1});if(G=='dice')return dcfgShow();start()}
+function join(m,k){mode=m;maxH={q:9,b3:3,b4:4,b6:6,b9:9}[m];
+if(typeof Peer=='undefined'){scr('lobby');return lob('Multiplayer needs an internet connection.')}
+MP=1;$('#chat').style.display='block';scr('lobby');if(k>4)return lob('All rooms are busy. Try again in a minute.');lob('Finding a room…');
+const id=pf()+'-'+m+'-'+k,p=new Peer(id);peer=p;
+p.on('open',()=>hostRoom());
+p.on('error',e=>{if(e.type=='unavailable-id'){p.destroy();cli(m,k)}else lob('Network error: '+e.type)})}
+function hostRoom(){started=false;L=[];if(G=='dice'){$('#ltg').value=CF.tg;$('#ltm').value=CF.min;$('#lcfg').style.display='block'}lobbyTick();
+peer.on('connection',c=>{
+if(started||1+L.length>=maxH){c.on('open',()=>{c.send({t:'busy'});setTimeout(()=>c.close(),300)});return}
+c.on('data',d=>{if(d.t=='c'){chatIn(c,d.m);return}if(d.t=='n'&&!L.includes(c)){c.pn=String(d.n).slice(0,12);L.push(c);lobbyTick();return}const i=Q.findIndex(p=>p.c==c);if(d.t=='a'&&i>=0)G=='dice'?dact(i,d.a):act2(i,d.a,d.x)});
+c.on('close',()=>{L=L.filter(x=>x!=c);const s=Q.find(p=>p.c==c);if(s){s.bot=true;s.c=null;s.n+='*'}else lobbyTick()})})}
+const lobH=t=>lob(t+(G=='dice'?'\nTarget '+CF.tg+' · Timer '+(CF.min?CF.min+' min':'off'):''));
+function lobbyTick(){const h=1+L.length;clearInterval(cdT);
+if(h>=maxH)return begin();
+if(h>=2){let s=G=='dice'?20:10;const u=()=>lobH('Players '+h+'/'+maxH+' · starting in '+s+'s');u();cdT=setInterval(()=>{s--;if(s<=0)begin();else u()},1000)}
+else lobH('Waiting for players… 1/'+maxH+'\nShare this page with a friend!')}
+function begin(){clearInterval(cdT);started=true;const h=1+L.length;n=mode=='q'?h:+mode.slice(1);
+Q=[{n:MY,local:1}];L.forEach((c,i)=>{let s=c.pn||'P'+(i+2);while(Q.some(p=>p.n==s))s+='2';Q.push({n:s,c})});
+while(Q.length<n)Q.push({n:NAMES[Q.length-h],bot:1});TG=CF.tg;start()}
+function cli(m,k){isHost=false;const id=pf()+'-'+m+'-'+k,p=new Peer();peer=p;let ok=0;
+p.on('open',()=>{const c=p.connect(id,{reliable:true});conn=c;
+const to=setTimeout(()=>{if(!ok){p.destroy();join(m,k+1)}},7000);
+c.on('open',()=>{ok=1;clearTimeout(to);c.send({t:'n',n:MY});lob('Connected. Waiting for the host…')});
+c.on('data',d=>{if(d.t=='busy'){ok=0;p.destroy();join(m,k+1)}else if(d.t=='l')lob(d.m);else if(d.t=='m')chatAdd(d.n,d.m);else if(d.t=='s')setS(d.v)});
+c.on('close',()=>{if(ok){alert('Host left the table.');location.reload()}})});
+p.on('error',()=>{})}
+function chatAdd(nm,m){const l=$('#cl'),e=document.createElement('div'),b=document.createElement('b');b.textContent=String(nm).slice(0,14)+': ';e.append(b,document.createTextNode(String(m).slice(0,140)));l.append(e);while(l.children.length>60)l.firstChild.remove();l.scrollTop=l.scrollHeight}
+function chatBroadcast(nm,m){chatAdd(nm,m);L.forEach(c=>c.open&&c.send({t:'m',n:nm,m}))}
+function chatIn(c,m){const t=Date.now();if(t-(c.lc||0)<500)return;c.lc=t;const s=Q.find(p=>p.c==c);chatBroadcast(s?s.n:c.pn||'?',String(m).slice(0,140))}
+function chatSend(){const v=$('#ci').value.trim().slice(0,140);if(!v)return;$('#ci').value='';if(isHost)chatBroadcast(MY,v);else if(conn&&conn.open)conn.send({t:'c',m:v})}
+$('#cs').onclick=chatSend;$('#ci').onkeydown=e=>{if(e.key=='Enter')chatSend()};
+function send(a,x){if(isHost)G=='dice'?dact(0,a):act2(0,a,x);else conn.send({t:'a',a,x})}
+$('#bF').onclick=()=>send('fold');$('#bC').onclick=()=>send('call');
+$('#bR1').onclick=()=>send('raise',40);$('#bR2').onclick=()=>send('raise',100);$('#bRoll').onclick=()=>send('roll');$('#bBank').onclick=()=>send('bank');
+
+/* ---------- client view + pixel renderer ---------- */
+let S=null,dealing=false,lastDn=-1,bub='',lastH=-1,dealStart=0;const born={};
+function setS(v){if(G=='dice')return dSet(v);const NS=JSON.parse(v);spriteEvents(S,NS);S=NS;S.end=Date.now()+S.tl*1000;if(S.H!==lastH){lastH=S.H;dealStart=performance.now()}if(S.dn!==lastDn){lastDn=S.dn;bub=S.dt}$('#tm').textContent='';scr('');$('#acts').style.display='grid';$('#lv').style.display='block';
+const p=S.seats[S.me],tc=S.cbet-p.bet,my=!S.over&&S.cur==S.me&&!p.f&&!S.busy;
+['bF','bC'].forEach(k=>$('#'+k).disabled=!my);
+$('#bC').textContent=tc?'CALL '+tc:'CHECK';
+$('#bR1').textContent='RAISE '+(S.cbet+40);$('#bR2').textContent='RAISE '+(S.cbet+100);
+$('#bR1').disabled=$('#bR2').disabled=!my||S.raises>=2;
+let m=S.over?(S.msg||'Showdown…'):'';
+if(!S.over&&!p.f){const b=S.board.length?best([...p.h,...S.board]):score(p.h);m='Your hand: '+descr(b)+(my?'   ▶ YOUR TURN':'')}
+else if(!S.over)m='You folded. Watching…';
+$('#ms').textContent=m}
+const cv=$('#cv'),g=cv.getContext('2d');g.scale(2,2);
+/* =====================================================================
+   SPRITE CONFIG  (the only part you need to edit to add PNGs)
+   ---------------------------------------------------------------------
+   * Every file name is RELATIVE to ASSET_BASE (your GitHub Pages folder).
+     Example: ASSET_BASE + 'players/L/idle_1.png'
+   * P(frames, fps, loop): frames = array of file names (animation frames,
+     1 file = still image), fps = speed, loop = repeat while in that state.
+   * Empty array [] = nothing uploaded yet -> the game keeps its default look.
+   * A state with no PNGs falls back automatically (e.g. raise -> bet -> call
+     -> idle), so you can add pictures one at a time.
+   * Seat slots on the table (you are always B, facing the dealer D):
+
+                        TL2 TL [ D ] TR TR2          (TL2 / TR2 only at 8 / 9 players)
+                     L                      R
+                          BL    B    BR
+   * Seats fill in this order as the player count grows:
+       2P: B,L   3P: +R   4P: +TL   5P: +TR   6P: +BL   7P: +BR   8P: +TL2   9P: +TR2
+   ===================================================================== */
+const ASSET_BASE='https://schlerium.github.io/sprites/casino/';   // <-- change to your repo/pages folder
+const SPRITE_REPLACES_FX=true;   // true: when a dealer SHUFFLE sprite is showing, hide the default card-pile shuffle drawing
+const P=(frames=[],fps=8,loop=false)=>({frames,fps,loop});
+
+/* ------------------------- PLAYER SPRITES ------------------------- */
+const PLAYER_SPRITES={};
+PLAYER_SPRITES.B=null; // B = YOU (bottom centre, always facing the dealer). No animation, normal cards are drawn.
+
+// ---- slot L : LEFT ----
+PLAYER_SPRITES.L={
+  box:{w:64,h:56,x:0,y:-14},   // sprite size + offset from the seat anchor (tweak per slot)
+  empty:   P([],6,true),      // no cards in hand: before the deal / after folding / after showing
+  deal1:   P([],10,false),    // dealer throws the 1st card to this seat
+  deal2:   P([],10,false),    // dealer throws the 2nd card; when it finishes the seat rests in idle
+  idle:    P([],6,true),      // BASE POSE: sitting, holding 2 cards
+  peek:    P([],8,false),     // checks own cards: random while idle + when their turn starts
+  call:    P([],10,false),    // throws chips in (CALL, also used for a plain bet)
+  bet:     P([],10,false),    // optional separate BET look (falls back to call)
+  raise:   P([],10,false),    // puts chips in a different way (falls back to bet, call)
+  check:   P([],10,false),    // taps the table
+  fold:    P([],10,false),    // returns / pushes cards back
+  showdown:P([],10,false),    // throws cards onto the table at showdown
+};
+
+// ---- slot R : RIGHT ----
+PLAYER_SPRITES.R={
+  box:{w:64,h:56,x:0,y:-14},   // sprite size + offset from the seat anchor (tweak per slot)
+  empty:   P([],6,true),      // no cards in hand: before the deal / after folding / after showing
+  deal1:   P([],10,false),    // dealer throws the 1st card to this seat
+  deal2:   P([],10,false),    // dealer throws the 2nd card; when it finishes the seat rests in idle
+  idle:    P([],6,true),      // BASE POSE: sitting, holding 2 cards
+  peek:    P([],8,false),     // checks own cards: random while idle + when their turn starts
+  call:    P([],10,false),    // throws chips in (CALL, also used for a plain bet)
+  bet:     P([],10,false),    // optional separate BET look (falls back to call)
+  raise:   P([],10,false),    // puts chips in a different way (falls back to bet, call)
+  check:   P([],10,false),    // taps the table
+  fold:    P([],10,false),    // returns / pushes cards back
+  showdown:P([],10,false),    // throws cards onto the table at showdown
+};
+
+// ---- slot TL : TOP-LEFT (outer, beside the dealer notch) ----
+PLAYER_SPRITES.TL={
+  box:{w:64,h:56,x:0,y:-14},   // sprite size + offset from the seat anchor (tweak per slot)
+  empty:   P([],6,true),      // no cards in hand: before the deal / after folding / after showing
+  deal1:   P([],10,false),    // dealer throws the 1st card to this seat
+  deal2:   P([],10,false),    // dealer throws the 2nd card; when it finishes the seat rests in idle
+  idle:    P([],6,true),      // BASE POSE: sitting, holding 2 cards
+  peek:    P([],8,false),     // checks own cards: random while idle + when their turn starts
+  call:    P([],10,false),    // throws chips in (CALL, also used for a plain bet)
+  bet:     P([],10,false),    // optional separate BET look (falls back to call)
+  raise:   P([],10,false),    // puts chips in a different way (falls back to bet, call)
+  check:   P([],10,false),    // taps the table
+  fold:    P([],10,false),    // returns / pushes cards back
+  showdown:P([],10,false),    // throws cards onto the table at showdown
+};
+
+// ---- slot TR : TOP-RIGHT (outer) ----
+PLAYER_SPRITES.TR={
+  box:{w:64,h:56,x:0,y:-14},   // sprite size + offset from the seat anchor (tweak per slot)
+  empty:   P([],6,true),      // no cards in hand: before the deal / after folding / after showing
+  deal1:   P([],10,false),    // dealer throws the 1st card to this seat
+  deal2:   P([],10,false),    // dealer throws the 2nd card; when it finishes the seat rests in idle
+  idle:    P([],6,true),      // BASE POSE: sitting, holding 2 cards
+  peek:    P([],8,false),     // checks own cards: random while idle + when their turn starts
+  call:    P([],10,false),    // throws chips in (CALL, also used for a plain bet)
+  bet:     P([],10,false),    // optional separate BET look (falls back to call)
+  raise:   P([],10,false),    // puts chips in a different way (falls back to bet, call)
+  check:   P([],10,false),    // taps the table
+  fold:    P([],10,false),    // returns / pushes cards back
+  showdown:P([],10,false),    // throws cards onto the table at showdown
+};
+
+// ---- slot BL : BOTTOM-LEFT ----
+PLAYER_SPRITES.BL={
+  box:{w:64,h:56,x:0,y:-14},   // sprite size + offset from the seat anchor (tweak per slot)
+  empty:   P([],6,true),      // no cards in hand: before the deal / after folding / after showing
+  deal1:   P([],10,false),    // dealer throws the 1st card to this seat
+  deal2:   P([],10,false),    // dealer throws the 2nd card; when it finishes the seat rests in idle
+  idle:    P([],6,true),      // BASE POSE: sitting, holding 2 cards
+  peek:    P([],8,false),     // checks own cards: random while idle + when their turn starts
+  call:    P([],10,false),    // throws chips in (CALL, also used for a plain bet)
+  bet:     P([],10,false),    // optional separate BET look (falls back to call)
+  raise:   P([],10,false),    // puts chips in a different way (falls back to bet, call)
+  check:   P([],10,false),    // taps the table
+  fold:    P([],10,false),    // returns / pushes cards back
+  showdown:P([],10,false),    // throws cards onto the table at showdown
+};
+
+// ---- slot BR : BOTTOM-RIGHT ----
+PLAYER_SPRITES.BR={
+  box:{w:64,h:56,x:0,y:-14},   // sprite size + offset from the seat anchor (tweak per slot)
+  empty:   P([],6,true),      // no cards in hand: before the deal / after folding / after showing
+  deal1:   P([],10,false),    // dealer throws the 1st card to this seat
+  deal2:   P([],10,false),    // dealer throws the 2nd card; when it finishes the seat rests in idle
+  idle:    P([],6,true),      // BASE POSE: sitting, holding 2 cards
+  peek:    P([],8,false),     // checks own cards: random while idle + when their turn starts
+  call:    P([],10,false),    // throws chips in (CALL, also used for a plain bet)
+  bet:     P([],10,false),    // optional separate BET look (falls back to call)
+  raise:   P([],10,false),    // puts chips in a different way (falls back to bet, call)
+  check:   P([],10,false),    // taps the table
+  fold:    P([],10,false),    // returns / pushes cards back
+  showdown:P([],10,false),    // throws cards onto the table at showdown
+};
+
+// ---- slot TL2 : TOP-LEFT inner (only 8+ players) ----
+PLAYER_SPRITES.TL2={
+  box:{w:64,h:56,x:0,y:-14},   // sprite size + offset from the seat anchor (tweak per slot)
+  empty:   P([],6,true),      // no cards in hand: before the deal / after folding / after showing
+  deal1:   P([],10,false),    // dealer throws the 1st card to this seat
+  deal2:   P([],10,false),    // dealer throws the 2nd card; when it finishes the seat rests in idle
+  idle:    P([],6,true),      // BASE POSE: sitting, holding 2 cards
+  peek:    P([],8,false),     // checks own cards: random while idle + when their turn starts
+  call:    P([],10,false),    // throws chips in (CALL, also used for a plain bet)
+  bet:     P([],10,false),    // optional separate BET look (falls back to call)
+  raise:   P([],10,false),    // puts chips in a different way (falls back to bet, call)
+  check:   P([],10,false),    // taps the table
+  fold:    P([],10,false),    // returns / pushes cards back
+  showdown:P([],10,false),    // throws cards onto the table at showdown
+};
+
+// ---- slot TR2 : TOP-RIGHT inner (only 9 players) ----
+PLAYER_SPRITES.TR2={
+  box:{w:64,h:56,x:0,y:-14},   // sprite size + offset from the seat anchor (tweak per slot)
+  empty:   P([],6,true),      // no cards in hand: before the deal / after folding / after showing
+  deal1:   P([],10,false),    // dealer throws the 1st card to this seat
+  deal2:   P([],10,false),    // dealer throws the 2nd card; when it finishes the seat rests in idle
+  idle:    P([],6,true),      // BASE POSE: sitting, holding 2 cards
+  peek:    P([],8,false),     // checks own cards: random while idle + when their turn starts
+  call:    P([],10,false),    // throws chips in (CALL, also used for a plain bet)
+  bet:     P([],10,false),    // optional separate BET look (falls back to call)
+  raise:   P([],10,false),    // puts chips in a different way (falls back to bet, call)
+  check:   P([],10,false),    // taps the table
+  fold:    P([],10,false),    // returns / pushes cards back
+  showdown:P([],10,false),    // throws cards onto the table at showdown
+};
+
+/* ------------------------- DEALER SPRITES ------------------------- */
+const DEALER_SPRITES={
+  box:{w:72,h:64,x:240,y:80},          // sprite size + centre position of the dealer
+  idle:           P([],4,true),        // standing in the notch (base pose)
+  // --- shuffle, one entry per style (the game picks one randomly each hand) ---
+  shuffle_riffle:   P([],10,true),
+  shuffle_overhand: P([],10,true),
+  shuffle_wash:     P([],10,true),
+  shuffle_cut:      P([],10,true),
+  // --- throwing a card. dealTo.<slot> = card thrown towards THAT seat; empty ones fall back to 'deal' ---
+  deal:           P([],12,false),
+  dealTo:{
+    B:   P([],12,false),   // you
+    L:   P([],12,false),   R:   P([],12,false),
+    TL:  P([],12,false),   TR:  P([],12,false),
+    BL:  P([],12,false),   BR:  P([],12,false),
+    TL2: P([],12,false),   TR2: P([],12,false),
+  },
+  reveal:         P([],10,false),      // shows/places community cards (flop, turn, river)
+  arrange:        P([],8,true),        // showdown: pretends to arrange the cards
+  // --- calling a player + pointing at THEIR slot (turn start, and showdown "X shows") ---
+  point:{
+    B:   P([],8,false),    // pointing at you
+    L:   P([],8,false),    R:   P([],8,false),
+    TL:  P([],8,false),    TR:  P([],8,false),
+    BL:  P([],8,false),    BR:  P([],8,false),
+    TL2: P([],8,false),    TR2: P([],8,false),
+  },
+};
+/* ===================== end of SPRITE CONFIG ===================== */
+
+/* ---- sprite engine (no need to edit below) ---- */
+const IMGS={};
+function imgOf(f){let o=IMGS[f];if(!o){o=IMGS[f]={im:new Image(),ok:0};o.im.onload=()=>o.ok=1;o.im.src=ASSET_BASE+f}return o}
+(function pre(o){if(o&&typeof o=='object'){if(Array.isArray(o.frames))o.frames.forEach(imgOf);else Object.values(o).forEach(pre)}})({PLAYER_SPRITES,DEALER_SPRITES});
+const ready=d=>!!(d&&d.frames&&d.frames.length&&d.frames.every(f=>IMGS[f]&&IMGS[f].ok)),dur=d=>d.frames.length/d.fps*1000;
+function fr(d,t0,now){const n=d.frames.length;let i=Math.floor((now-t0)/1000*d.fps);i=d.loop?((i%n)+n)%n:Math.max(0,Math.min(i,n-1));return IMGS[d.frames[i]].im}
+function spr(im,b,ax,ay){g.imageSmoothingEnabled=false;g.drawImage(im,Math.round(ax+b.x-b.w/2),Math.round(ay+b.y-b.h/2),b.w,b.h)}
+const CHAIN={empty:['empty'],deal1:['deal1','empty'],deal2:['deal2','idle'],idle:['idle'],peek:['peek','idle'],call:['call','bet','idle'],bet:['bet','call','idle'],raise:['raise','bet','call','idle'],check:['check','idle'],fold:['fold','empty'],showdown:['showdown','empty']};
+function pickP(slot,st){const set=PLAYER_SPRITES[slot];if(!set)return null;for(const k of CHAIN[st]||[]){if(ready(set[k]))return{k,d:set[k]}}return null}
+
+/* ---- table geometry + seat slots ---- */
+const ORDER=['B','L','R','TL','TR','BL','BR','TL2','TR2'];
+const RING=['B','BL','L','TL','TL2','TR2','TR','R','BR'];
+const SEATXY={
+ small:{B:[240,232],L:[30,158],R:[450,158],TL:[104,84],TR:[376,84],BL:[116,226],BR:[364,226],TL2:[150,84],TR2:[330,84]},
+ wide: {B:[240,232],L:[24,158],R:[456,158],TL:[66,84],TR:[414,84],BL:[104,226],BR:[376,226],TL2:[132,84],TR2:[348,84]}};
+const sp=(slot,N)=>SEATXY[N>=8?'wide':'small'][slot];
+function layout(N,me){const used=ORDER.slice(0,N),ring=RING.filter(x=>used.includes(x)),out=[];for(let k=0;k<N;k++)out[(me+k)%N]=ring[k];return out}
+const TBL={small:{x0:60,x1:420,y0:96,y1:216,rc:52,wt:46,wb:30,d:20},wide:{x0:44,x1:436,y0:96,y1:216,rc:56,wt:74,wb:56,d:16}};
+function tableMap(v){const c=TBL[v],m=new Uint8Array(480*270);
+const inn=(x,y,e)=>{const L=c.x0+e,Rr=c.x1-e,Tp=c.y0+e,Bt=c.y1-e,r=c.rc-e;if(x<L||x>Rr||y<Tp||y>Bt)return 0;
+const cx=Math.min(Math.max(x,L+r),Rr-r),cy=Math.min(Math.max(y,Tp+r),Bt-r);if((x-cx)**2+(y-cy)**2>r*r)return 0;
+if(y<c.y0+c.d+e){const hw=c.wb+(c.wt-c.wb)*Math.max(0,c.y0+c.d-y)/c.d;if(Math.abs(x-240)<hw+e)return 0}return 1};
+for(let y=c.y0;y<=c.y1;y++)for(let x=c.x0;x<=c.x1;x++){const px=x+.5,py=y+.5;m[y*480+x]=inn(px,py,7)?3:inn(px,py,2)?2:inn(px,py,0)?1:0}return m}
+const TC={};
+function tableCanvas(v){if(TC[v])return TC[v];const m=tableMap(v),c=document.createElement('canvas');c.width=960;c.height=540;const x=c.getContext('2d');x.scale(2,2);
+for(let y=0;y<270;y++){let x0=0,cur=0;for(let xx=0;xx<=480;xx++){const k=xx<480?m[y*480+xx]:0;if(k!=cur){if(cur){x.fillStyle=cur==1?'#7a4a22':cur==2?'#4a2a14':(((y-96)>>1)%4?'#0f6b3f':'#117a47');x.fillRect(x0,y,xx-x0,1)}cur=k;x0=xx}}}
+return TC[v]=c}
+function tbl(){const N=G=='dice'?(DS?DS.n:2):(S?S.n:2);g.drawImage(tableCanvas(N>=8?'wide':'small'),0,0,480,270)}
+
+/* ---- per-seat + dealer animation state ---- */
+let TRG={},SA={},dTrig=0,shT=0,DFX={hideShuffle:false};
+function spriteEvents(pv,ns){const now=performance.now();
+if(!pv||pv.H!==ns.H){TRG={};SA={};dTrig=0;shT=0;return}
+ns.seats.forEach((p,j)=>{const q=pv.seats[j];if(!q)return;
+if(p.say!==q.say){const m=/^(CALL|RAISE|CHECK|FOLD)/.exec(p.say||'');if(m)TRG[j]={st:m[1].toLowerCase(),t:now}}
+if(p.bc&&!q.bc)TRG[j]={st:'showdown',t:now}});
+if(ns.cur!==pv.cur&&ns.cur>=0&&!ns.over&&ns.seats[ns.cur]&&!ns.seats[ns.cur].f)TRG[ns.cur]={st:'peek',t:now};
+if(ns.board.length>pv.board.length)dTrig=now;
+if(ns.sh!==pv.sh&&ns.sh>=0)shT=now}
+function seatSprite(j,slot,p,now,N){
+const t1=dealStart+1800+(((j-S.D-1)%N+N)%N)*300,t2=t1+N*300;let st,t0=0;
+if(now<t1)st='empty';
+else if(now<t2){st='deal1';t0=t1}
+else{const tr=TRG[j];let one=null;
+if(tr){const pk=pickP(slot,tr.st);if(pk&&now-tr.t<dur(pk.d))one=tr}
+if(one){st=one.st;t0=one.t}
+else{const pk2=pickP(slot,'deal2'),d2=pk2&&pk2.k=='deal2'?dur(pk2.d):0;
+if(now<t2+d2){st='deal2';t0=t2}
+else if(p.f||p.bc)st='empty';
+else{st='idle';const a=SA[j]||(SA[j]={np:now+5000+Math.random()*8000});
+if(now>a.np){TRG[j]={st:'peek',t:now};a.np=now+7000+Math.random()*9000}}}}
+const pk=pickP(slot,st);return pk?{im:fr(pk.d,t0,now),box:PLAYER_SPRITES[slot].box}:null}
+const SHN=['riffle','overhand','wash','cut'];
+function dealerWant(now){
+if(G=='dice'){if(!DS||DS.over)return['idle',0];return['point.'+layout(DS.n,DS.me)[DS.cur],0]}
+if(!S)return['idle',0];
+const N=S.n,el=now-dealStart,lay=layout(N,S.me);
+if(el<1800)return['shuffle_'+SHN[S.sy|0],dealStart];
+if(el<1800+2*N*300){const idx=Math.floor((el-1800)/300);return['dealTo.'+lay[(S.D+1+idx%N)%N],dealStart+1800+idx*300]}
+if(S.over&&S.sh>=0){const d=now-shT;return d<900?['point.'+lay[S.sh],shT]:['arrange',shT+900]}
+if(dTrig&&ready(DEALER_SPRITES.reveal)&&now-dTrig<dur(DEALER_SPRITES.reveal))return['reveal',dTrig];
+if(!S.over&&S.cur>=0)return['point.'+lay[S.cur],0];
+return['idle',0]}
+const dget=k=>{const a=k.split('.');let o=DEALER_SPRITES[a[0]];return a[1]?o&&o[a[1]]:o};
+function dealerDraw(t,dl){const now=performance.now(),w=dealerWant(now);let ch=null;
+for(const k of [w[0],...(w[0].startsWith('dealTo.')?['deal']:[]),'idle']){const d=dget(k);if(ready(d)){ch={k,d};break}}
+DFX.hideShuffle=!!(SPRITE_REPLACES_FX&&ch&&ch.k.startsWith('shuffle_'));
+if(ch)spr(fr(ch.d,ch.k==w[0]?w[1]:0,now),DEALER_SPRITES.box,0,0);else dealer(t,dl)}
+/* ---- end sprite engine ---- */
+
+
+const R=(c,x,y,w,h)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h)};
+const T=(t,x,y,c='#fff',al='center',s=8,sh=1)=>{g.font=`bold ${s}px "Courier New",monospace`;g.textAlign=al;if(sh){g.fillStyle='#000';g.fillText(t,x+1,y+1)}g.fillStyle=c;g.fillText(t,x,y)};
+const cp=(r,now)=>{const p=Math.min(1,(now-r.t)/450),e=1-(1-p)**3;return[r.fx+(r.tx-r.fx)*e,r.fy+(r.ty-r.fy)*e]};
+function at(k,x,y){const now=performance.now();let r=born[k];
+if(!r)r=born[k]={t:now,fx:240,fy:80,tx:x,ty:y,d:1};
+else if(r.tx!=x||r.ty!=y){const c=cp(r,now);r.fx=c[0];r.fy=c[1];r.tx=x;r.ty=y;r.t=now;r.d=0}
+if(r.d&&now-r.t<450)dealing=true;return cp(r,now)}
+function combo(){if(S.sh<0)return null;const p=S.seats[S.sh];if(!p||!p.bc)return null;
+const bc=p.bc,cnt={};bc.forEach(c=>cnt[c.r]=(cnt[c.r]||0)+1);
+const wh=Object.keys(cnt).length==5&&[14,5,4,3,2].every(r=>cnt[r]),rk=c=>wh&&c.r==14?1:c.r;
+const ok=(a,c)=>a.some(x=>x.r==c.r&&x.s==c.s),o=[...bc].sort((a,b)=>cnt[b.r]-cnt[a.r]||rk(b)-rk(a)),
+x0=240-(o.length*24-4)/2,pos={};
+o.forEach((c,i)=>pos[c.r+c.s]=[x0+i*24,ok(S.board,c)?84:94]);return pos}
+const bk=(x,y)=>card(0,Math.round(x),Math.round(y)),stk=(x,y,k)=>{for(let i=0;i<k;i++)bk(x,y-i*1.5)};
+const SHF=[
+el=>{const ph=(el/600)%1,tri=1-Math.abs(2*ph-1),off=1+23*(1-tri);for(let i=0;i<5;i++){bk(236-off,84-i*2);bk(236+off,85-i*2)}},
+el=>{const m=Math.min(5,el/300|0),ph=(el-m*300)/300;stk(214,84,6-m);stk(266,84,m+1);const y=84-18*Math.sin(Math.PI*ph);bk(214+52*ph,y);bk(216+52*ph,y+1)},
+el=>{const r=Math.sin(Math.PI*el/1800);for(let i=0;i<9;i++){const a=el/180+i*Math.PI*2/9;bk(240+Math.cos(a)*64*r,80+Math.sin(a)*22*r)}},
+el=>{const u=el/1800;let a,b,c;
+if(u<.3){const e=u/.3;a=[240-42*e,80];b=[240,80-12*e];c=[240+42*e,80]}
+else if(u<.7){const e=(u-.3)/.4,h=12*Math.sin(Math.PI*e);a=[198+84*e,80-h];b=[240,68];c=[282-84*e,80-h]}
+else{const e=(u-.7)/.3;a=[282-42*e,80];b=[240,68+12*e];c=[198+42*e,80]}
+[a,b,c].forEach(q=>stk(q[0],q[1],4))}];
+function bg(t){R('#2a0716',0,0,480,270);
+for(let y=0;y<190;y+=10)R(y%20?'#340a1c':'#2f081a',0,y,480,10);
+R('#c9a227',0,0,480,4);R('#8a6d12',0,4,480,2);
+for(let i=0;i<5;i++){const x=60+i*90;R('#8a6d12',x,6,2,14);R((t/400+i|0)%2?'#ffe27a':'#ffd23f',x-5,20,12,8);R('#fff6c4',x-2,22,6,3)}
+[15,415].forEach((x,k)=>{R('#1b1b2f',x,60,50,100);R('#d3322c',x+3,63,44,8);R('#000',x+6,78,38,26);
+for(let j=0;j<3;j++)R(['#ffe27a','#ff5a5a','#7dfc9c'][((t/150|0)+j+k)%3],x+9+j*12,82,9,18);R('#c9a227',x+42,105,3,20)});
+for(let y=190;y<270;y+=10)for(let x=0;x<480;x+=10)R((x/10+y/10)%2?'#1c1030':'#2c1a4a',x,y,10,10)}
+function dealer(t,dl){const y=44+(Math.sin(t/350)>0?1:0);
+R('#111',222,y+26,36,42,);R('#fff',234,y+26,12,22);R('#d33',237,y+27,6,4);
+R('#f1c27d',230,y+6,20,20);R('#222',228,y+2,24,7);
+if(t%3000>150){R('#000',234,y+14,3,3);R('#000',243,y+14,3,3)}else{R('#000',234,y+15,3,1);R('#000',243,y+15,3,1)}
+R('#b5533c',236,y+21,8,2);R('#111',214,y+28,8,26);
+if(dl){R('#111',258,y+34,26,7);R('#f1c27d',284,y+33,7,9)}else R('#111',258,y+28,8,26);
+T('DEALER',240,y+62,'#ffd23f','center',6)}
+function card(c,x,y,hl){R(hl?'#ffd23f':'#111',x-1,y-1,22,30);
+if(!c){R('#2a4bd8',x,y,20,28);for(let i=0;i<7;i++)for(let j=0;j<5;j++)if((i+j)%2)R('#e8e8ff',x+2+j*4,y+2+i*4,2,2);return}
+R('#fff',x,y,20,28);const col=c.s=='♥'||c.s=='♦'?'#d01f2e':'#111';
+T(rn(c.r),x+3,y+11,col,'left',10,0);T(c.s,x+10,y+24,col,'center',12,0)}
+function bubble(txt){const w=[];let l='';txt.split(' ').forEach(x=>{if((l+' '+x).length>30){w.push(l);l=x}else l=l?l+' '+x:x});w.push(l);
+const bw=Math.max(...w.map(q=>q.length))*4.9+14,bh=w.length*10+6,x=240-bw/2,y=40-bh;
+R('#000',x-1,y-1,bw+2,bh+2);R('#fff',x,y,bw,bh);R('#000',236,40,8,2);R('#fff',237,39,6,2);R('#000',238,42,4,2);
+w.forEach((q,i)=>T(q,240,y+10+i*10,'#111','center',8,0))}
+function frame(t){const dl=dealing;dealing=false;bg(t);dealerDraw(t,dl);tbl();
+if(G=='dice')dframe(t);else if(S){const N=S.n,now=performance.now(),el=now-dealStart,cb=combo(),lay=layout(N,S.me),DE=1800+2*N*300;
+if(el<1800){if(!DFX.hideShuffle)SHF[S.sy|0](el);dealing=true}else if(el<DE+450){for(let i=2;i>=0;i--)card(0,240+i,80+i)}
+T(['PRE-FLOP','FLOP','TURN','RIVER','SHOWDOWN'][S.stage],8,18,'#ffd23f','left',8);
+T('POT $'+S.pot,240,128,'#ffd23f','center',9);
+for(let i=0;i<Math.min(8,S.pot/40|0);i++){R('#c9a227',196+i*3,124-(i%2)*2,6,4)}
+for(let i=0;i<5;i++){const c=S.board[i];if(c){const lf=cb&&cb[c.r+c.s];if(lf)R('#0a4d2c',182+i*24,138,20,28);
+const[x,y]=at(S.H+'b'+i,lf?lf[0]:182+i*24,lf?lf[1]:138);if(cb&&!lf)g.globalAlpha=.45;card(c,x,y,S.hl.includes(c.r+c.s));g.globalAlpha=1}else R('#0a4d2c',182+i*24,138,20,28)}
+S.seats.forEach((p,j)=>{const slot=lay[j],[x,y]=sp(slot,N),ss=slot=='B'?null:seatSprite(j,slot,p,now,N);if(ss)spr(ss.im,ss.box,x,y);
+p.h.forEach((c,i)=>{if(now<dealStart+1800+(i*N+((j-S.D-1)%N+N)%N)*300)return;if(ss&&!p.bc)return;let tx=x-21+i*22,ty=y-28;
+if(p.bc&&c){const lf=cb&&j==S.sh&&cb[c.r+c.s];if(lf){tx=lf[0];ty=lf[1]}else{tx+=(240-x)*.25;ty+=(158-ty)*.3}}
+const[cx,cy]=at(S.H+'h'+j+i,tx,ty);card(c,cx,cy,c&&S.hl.includes(c.r+c.s))});
+if(p.f){g.globalAlpha=.55;R('#000',x-24,y-31,48,56);g.globalAlpha=1}
+T(p.n,x,y+9,j==S.me?'#ffd23f':'#fff','center',8);T('$'+p.chips,x,y+18,'#ffd23f','center',8);
+if(p.say)T(p.say=='...'?'thinking'+'.'.repeat(1+(t/400|0)%3):p.say,x,y-34,'#ffe27a','center',7);
+if(p.bet){const bx=x+(240-x)*.55,by=y+(150-y)*.55;R('#c9a227',bx-4,by-4,9,9);R('#ffe27a',bx-2,by-2,5,5);T(p.bet,bx+7,by+3,'#fff','left',7)}
+if(j==S.D){R('#fff',x+22,y+2,10,10);T('D',x+27,y+10,'#000','center',8,0)}
+if(!S.over&&S.cur==j&&S.tl>0){const sc=Math.max(0,Math.ceil((S.end-Date.now())/1000)),lo=sc<=10;R('#000',x-24,y+27,48,4);R(lo?'#ff4d3d':'#7dfc9c',x-23,y+28,46*sc/30,2);T(sc+'s',x,y+38,lo?'#ff6b5a':'#fff','center',8);
+if(j==S.me){const tt='⏱ '+sc+'s left';if($('#tm').textContent!=tt)$('#tm').textContent=tt}}
+const ring=!S.over&&S.cur==j&&(t/300|0)%2?'#ffd23f':p.win&&(t/200|0)%2?'#7dfc9c':0;
+if(ring){R(ring,x-26,y-33,52,2);R(ring,x-26,y+24,52,2);R(ring,x-26,y-33,2,59);R(ring,x+24,y-33,2,59)}})}
+if(bub)bubble(bub);requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+</script></body></html>
